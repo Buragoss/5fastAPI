@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 class TelemetryLogger:
-    """Логирование телеметрии робота в SQLite (универсальная схема)."""
 
     def __init__(self, db_path: str = "robot_telemetry.db") -> None:
         self.db_path = db_path
@@ -20,7 +19,7 @@ class TelemetryLogger:
             self._conn = None
 
     def init_schema(self) -> None:
-        """Создать таблицы (схема из Практики 4)."""
+
         assert self._conn is not None
         cur = self._conn.cursor()
         cur.executescript(
@@ -69,7 +68,7 @@ class TelemetryLogger:
 
     # --- Методы для API ---
     def create_session(self, variant_id: int) -> int:
-        """Создать новую сессию и вернуть её ID."""
+
         assert self._conn is not None
         ts = datetime.utcnow().isoformat()
         cur = self._conn.execute(
@@ -80,7 +79,7 @@ class TelemetryLogger:
         return cur.lastrowid
 
     def get_session(self, session_id: int) -> Optional[Dict[str, Any]]:
-        """Получить детали сессии."""
+
         cur = self._conn.execute(
             "SELECT * FROM sessions WHERE id=?", (session_id,)
         )
@@ -88,14 +87,14 @@ class TelemetryLogger:
         return dict(row) if row else None
 
     def list_sessions(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Список сессий."""
+
         cur = self._conn.execute(
             "SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?", (limit,)
         )
         return [dict(row) for row in cur.fetchall()]
 
     def end_session(self, session_id: int, status: str = "completed") -> None:
-        """Завершить сессию."""
+
         ts = datetime.utcnow().isoformat()
         self._conn.execute(
             "UPDATE sessions SET ended_at=?, status=? WHERE id=?",
@@ -104,7 +103,7 @@ class TelemetryLogger:
         self._conn.commit()
 
     def log_sensor(self, session_id: int, sensor_type: str, value: float, unit: str = "") -> None:
-        """Логировать показание сенсора."""
+
         ts = datetime.utcnow().isoformat()
         self._conn.execute(
             "INSERT INTO sensor_readings(session_id, sensor_type, timestamp, value, unit) VALUES (?,?,?,?,?)",
@@ -113,7 +112,7 @@ class TelemetryLogger:
         self._conn.commit()
 
     def log_command(self, session_id: int, actuator_type: str, command: float, status: str = "sent") -> None:
-        """Логировать команду актуатору."""
+
         ts = datetime.utcnow().isoformat()
         self._conn.execute(
             "INSERT INTO actuator_commands(session_id, actuator_type, timestamp, command, status) VALUES (?,?,?,?,?)",
@@ -122,7 +121,7 @@ class TelemetryLogger:
         self._conn.commit()
 
     def log_event(self, session_id: int, event_type: str, severity: str, message: str) -> None:
-        """Логировать событие."""
+
         ts = datetime.utcnow().isoformat()
         self._conn.execute(
             "INSERT INTO events(session_id, timestamp, event_type, severity, message) VALUES (?,?,?,?,?)",
@@ -131,7 +130,7 @@ class TelemetryLogger:
         self._conn.commit()
 
     def sensor_stats(self, session_id: int, sensor_type: str) -> Optional[Dict[str, Any]]:
-        """Статистика по сенсору."""
+
         cur = self._conn.execute(
             "SELECT COUNT(*) AS count, AVG(value) AS avg, MIN(value) AS min, MAX(value) AS max "
             "FROM sensor_readings WHERE session_id=? AND sensor_type=?",
@@ -141,7 +140,7 @@ class TelemetryLogger:
         return dict(row) if row else None
 
     def list_events(self, session_id: int, severity: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Список событий."""
+
         if severity:
             cur = self._conn.execute(
                 "SELECT * FROM events WHERE session_id=? AND severity=? ORDER BY timestamp",
@@ -155,7 +154,7 @@ class TelemetryLogger:
         return [dict(row) for row in cur.fetchall()]
 
     def list_sensor_readings(self, session_id: int, sensor_type: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Получить все показания сенсоров (по шагам)."""
+
         if sensor_type:
             cur = self._conn.execute(
                 "SELECT id, sensor_type, timestamp, value, unit FROM sensor_readings "
@@ -171,7 +170,7 @@ class TelemetryLogger:
         return [dict(row) for row in cur.fetchall()]
 
     def list_actuator_commands(self, session_id: int, actuator_type: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Получить все команды актуаторов (по шагам)."""
+
         if actuator_type:
             cur = self._conn.execute(
                 "SELECT id, actuator_type, timestamp, command, status FROM actuator_commands "
@@ -186,5 +185,5 @@ class TelemetryLogger:
             )
         return [dict(row) for row in cur.fetchall()]
 
-# Глобальный экземпляр для FastAPI
+
 db = TelemetryLogger()

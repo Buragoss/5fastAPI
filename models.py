@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Literal, List
 
-# --- Запросы ---
 class SessionCreate(BaseModel):
     variant_id: int = Field(..., ge=1, le=24, description="Номер варианта ЛР1 (1-24)")
 

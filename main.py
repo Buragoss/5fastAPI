@@ -10,7 +10,7 @@ from database import db
 
 app = FastAPI(
     title="Robot Telemetry API",
-    description="Универсальный API для телеметрии робототехнических систем (все варианты ЛР1)",
+    description="API для телеметрии",
     version="1.0.0"
 )
 
@@ -33,20 +33,17 @@ async def health():
 # --- Sessions ---
 @app.post("/sessions", response_model=SessionResponse, status_code=201, tags=["Sessions"])
 async def create_session(payload: SessionCreate):
-    """Создать новую сессию работы робота."""
     session_id = db.create_session(payload.variant_id)
     session = db.get_session(session_id)
     return session
 
 @app.get("/sessions", response_model=List[SessionResponse], tags=["Sessions"])
 async def list_sessions(limit: int = Query(100, ge=1, le=1000)):
-    """Получить список сессий."""
     sessions = db.list_sessions(limit=limit)
     return sessions
 
 @app.get("/sessions/{session_id}", response_model=SessionResponse, tags=["Sessions"])
 async def get_session(session_id: int):
-    """Получить детали сессии."""
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -54,7 +51,6 @@ async def get_session(session_id: int):
 
 @app.post("/sessions/{session_id}/end", response_model=SessionResponse, tags=["Sessions"])
 async def end_session(session_id: int, payload: SessionEnd):
-    """Завершить сессию."""
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -64,10 +60,9 @@ async def end_session(session_id: int, payload: SessionEnd):
     db.end_session(session_id, payload.status)
     return db.get_session(session_id)
 
-# --- Logging ---
 @app.post("/sessions/{session_id}/sensors", status_code=201, tags=["Logging"])
 async def log_sensor(session_id: int, payload: SensorReading):
-    """Записать показание сенсора."""
+
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -77,7 +72,7 @@ async def log_sensor(session_id: int, payload: SensorReading):
 
 @app.post("/sessions/{session_id}/actuators", status_code=201, tags=["Logging"])
 async def log_actuator(session_id: int, payload: ActuatorCommand):
-    """Записать команду актуатору."""
+
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -87,7 +82,7 @@ async def log_actuator(session_id: int, payload: ActuatorCommand):
 
 @app.post("/sessions/{session_id}/events", status_code=201, tags=["Logging"])
 async def log_event(session_id: int, payload: EventLog):
-    """Записать событие."""
+
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -95,10 +90,9 @@ async def log_event(session_id: int, payload: EventLog):
     db.log_event(session_id, payload.event_type, payload.severity, payload.message)
     return {"message": "Event logged"}
 
-# --- Analytics ---
 @app.get("/sessions/{session_id}/sensors/{sensor_type}/stats", response_model=SensorStatsResponse, tags=["Analytics"])
 async def get_sensor_stats(session_id: int, sensor_type: str):
-    """Получить статистику по сенсору."""
+
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -110,7 +104,7 @@ async def get_sensor_stats(session_id: int, sensor_type: str):
 
 @app.get("/sessions/{session_id}/events", response_model=List[EventResponse], tags=["Analytics"])
 async def get_events(session_id: int, severity: Optional[str] = Query(None, regex="^(info|warning|error)$")):
-    """Получить события сессии."""
+
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -123,7 +117,6 @@ async def get_sensor_readings(
     session_id: int,
     sensor_type: Optional[str] = Query(None, description="Фильтр по типу сенсора, например: IR_1")
 ):
-    """Получить все показания сенсоров за сессию (по шагам)."""
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
@@ -138,7 +131,7 @@ async def get_actuator_commands(
     session_id: int,
     actuator_type: Optional[str] = Query(None, description="Фильтр по типу актуатора, например: Motor_L")
 ):
-    """Получить все команды актуаторов за сессию (по шагам)."""
+
     session = db.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
